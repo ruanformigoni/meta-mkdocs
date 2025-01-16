@@ -1,0 +1,26 @@
+services:
+  meta_mkdocs_editor:
+    image: filebrowser/filebrowser:s6
+    container_name: meta_mkdocs_editor
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - $HOME/Repositories/meta-mkdocs/projects:/srv
+      - ./settings.json:/config/settings.json
+      - ./filebrowser.db:/database/filebrowser.db
+    ports:
+      - ${PORT_EDITOR}:80
+    restart: unless-stopped
+  meta_mkdocs:
+    image: ghcr.io/ruanformigoni/meta-mkdocs:latest
+    container_name: meta_mkdocs
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - $HOME/Repositories/meta-mkdocs/projects:/app/projects
+    ports:
+      - ${PORT_MAIN}:${PORT_MAIN}
+    command: /app/projects "0.0.0.0:${PORT_MAIN}" "127.0.0.1:${PORT_EDITOR}"
+    restart: unless-stopped
