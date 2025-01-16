@@ -36,7 +36,7 @@ pub async fn create(Form(payload): Form<crate::request::CreateProjectRequest>) -
   {
     let template = crate::templates::ErrorTemplate
     {
-      message: "Failed to create project",
+      message: &format!("Failed to create project: {}", result.unwrap_err()),
     };
     Html(template.render().unwrap())
   }
@@ -73,7 +73,10 @@ pub async fn delete(Form(payload): Form<crate::request::CreateProjectRequest>) -
   }
   else
   {
-    let template = crate::templates::ErrorTemplate { message: "Failed to delete project", };
+    let template = crate::templates::ErrorTemplate
+    {
+      message: &format!("Failed to delete project: {}", result.unwrap_err()),
+    };
     Html(template.render().unwrap())
   }
 } // fn: delete() }}}
