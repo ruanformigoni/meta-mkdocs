@@ -25,6 +25,7 @@ RUN cargo build --release --target=x86_64-unknown-linux-musl
 
 FROM alpine:latest
 RUN apk add --no-cache libgcc
+RUN mkdir -p /app/projects
 WORKDIR /app
 COPY --from=builder /meta_mkdocs/target/x86_64-unknown-linux-musl/release/meta_mkdocs .
-CMD ["./meta_mkdocs"]
+ENTRYPOINT ["/app/meta_mkdocs"]

@@ -57,10 +57,7 @@
                             </form>
                         </div>
                         <div class="col-auto align-items-end">
-                            <form method="post" action="/edit" class="d-inline">
-                                <input type="hidden" name="name" value="{{ project }}">
-                                <button type="submit" class="btn btn-warning w-100">Edit</button>
-                            </form>
+                            <a href="{{ editor }}/{{ project }}" target="_blank" class="btn btn-warning w-100">Edit</a>
                         </div>
                         <div class="col-auto align-items-end">
                             <form method="post" action="/delete" class="d-inline">

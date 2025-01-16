@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()>
 {
   let args: Vec<String> = std::env::args().collect();
   // Check arguments
-  if args.len() != 3
+  if args.len() != 4
   {
     eprintln!("Usage: /path/to/projects/directory server:port server:port");
     std::process::exit(1);
@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()>
   } // if
   // Get server and port for self and editor
   *URL_SELF.lock().unwrap() = args.get(2).unwrap().into();
-  *URL_EDITOR.lock().unwrap() = args.get(3).unwrap().into();
+  *URL_EDITOR.lock().unwrap() = format!("http://{}/files", args.get(3).unwrap()).into();
   // Assign path
   *DIR_PROJECTS.lock().unwrap() = path;
   // Create function router
@@ -47,8 +47,7 @@ async fn main() -> anyhow::Result<()>
     .route("/", get(controller::html))
     .route("/create", post(controller::create))
     .route("/delete", post(controller::delete))
-    .route("/list", get(controller::list))
-    .route("/edit", post(controller::edit));
+    .route("/list", get(controller::list));
   // Bind to address
   axum::Server::bind(&URL_SELF.lock().unwrap().to_string_lossy().to_owned().parse().unwrap())
     .serve(app.into_make_service())

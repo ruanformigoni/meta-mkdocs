@@ -28,6 +28,7 @@ pub async fn html() -> Html<String>
   let template = crate::templates::IndexTemplate
   {
     projects: &projects,
+    editor: &crate::URL_EDITOR.lock().unwrap().to_string_lossy().to_string(),
     error: false,
     error_msg: &String::new(),
   };

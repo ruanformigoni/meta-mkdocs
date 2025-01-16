@@ -2,7 +2,6 @@
 use chrono::offset::Local;
 use askama::Template;
 use axum::{
-  response::Redirect,
   extract::Form,
   response::Html,
 };
@@ -18,6 +17,7 @@ pub async fn create(Form(payload): Form<crate::request::CreateProjectRequest>) -
     let template = crate::templates::IndexTemplate
     {
       projects: &crate::projects::list(),
+      editor: &crate::URL_EDITOR.lock().unwrap().to_string_lossy().to_string(),
       error: true,
       error_msg: &String::from("Project exists"),
     };
@@ -42,12 +42,6 @@ pub async fn create(Form(payload): Form<crate::request::CreateProjectRequest>) -
   }
 } // fn: create() }}}
 
-// fn: edit() {{{
-pub async fn edit(Form(payload): Form<crate::request::CreateProjectRequest>) -> Redirect
-{
-  Redirect::to(&format!("http://127.0.0.1:81/files/{}", &payload.name))
-} // fn: edit() }}}
-
 // fn: delete() {{{
 pub async fn delete(Form(payload): Form<crate::request::CreateProjectRequest>) -> Html<String>
 {
@@ -61,6 +55,7 @@ pub async fn delete(Form(payload): Form<crate::request::CreateProjectRequest>) -
     let template = crate::templates::IndexTemplate
     {
       projects: &crate::projects::list(),
+      editor: &crate::URL_EDITOR.lock().unwrap().to_string_lossy().to_string(),
       error: true,
       error_msg: &String::from("Project does not exist"),
     };

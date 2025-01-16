@@ -5,6 +5,7 @@ use askama::Template;
 pub struct IndexTemplate<'a>
 {
   pub projects: &'a [String],
+  pub editor: &'a String,
   pub error: bool,
   pub error_msg: &'a String,
 }
