@@ -47,24 +47,25 @@
                 <hr>
                 {% for project in projects %}
                     <div class="row bg-light-subtle mb-3 p-2 rounded mx-1">
-                        <div class="col-8 align-self-center">
+                        <div class="col align-self-center">
                             {{ project }}
                         </div>
+                        <div class="col-3"> </div>
                         <div class="col">
-                            <div class="row row-cols-1 row-cols-lg-3 g-2">
+                            <div class="row row-cols-1 row-cols-md-3 g-2">
                                 <div class="col">
                                     <form method="post" action="/serve" class="d-inline">
                                         <input type="hidden" name="name" value="{{ project }}">
-                                        <button type="submit" class="btn btn-success w-100">Serve</button>
+                                        <button type="submit" class="btn btn-success w-100 text-nowrap">Serve</button>
                                     </form>
                                 </div>
                                 <div class="col">
-                                    <a href="http://{{ domain }}:{{ port_editor }}/{{ project }}" target="_blank" class="btn btn-primary w-100">Edit</a>
+                                    <a href="http://{{ domain }}:{{ port_editor }}/{{ project }}" target="_blank" class="btn btn-primary w-100 text-nowrap">Edit</a>
                                 </div>
                                 <div class="col">
                                     <form method="post" action="/delete" class="d-inline">
                                         <input type="hidden" name="name" value="{{ project }}">
-                                        <button type="submit" class="btn btn-danger w-100">Del</button>
+                                        <button type="submit" class="btn btn-danger w-100 text-nowrap">Del</button>
                                     </form>
                                 </div>
                             </div>
@@ -81,11 +82,12 @@
                 <hr>
                 {% if serving.len() > 0 %}
                 <div class="row bg-light-subtle mb-3 p-2 rounded mx-1">
-                    <div class="col-8 align-self-center">
+                    <div class="col align-self-center">
                         {{ serving }}
                     </div>
+                    <div class="col-3"> </div>
                     <div class="col">
-                        <a href="http://{{ domain }}:{{ port_serve }}" target="_blank" class="btn btn-primary w-100">Preview</a>
+                        <a href="http://{{ domain }}:{{ port_serve }}" target="_blank" class="btn btn-primary w-100 text-nowrap">Preview</a>
                     </div>
                 </div>
                 {% endif %}
