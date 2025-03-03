@@ -4,8 +4,11 @@ use askama::Template;
 #[template(path = "index.html")]
 pub struct IndexTemplate<'a>
 {
+  pub domain: &'a String,
+  pub port_serve: &'a String,
+  pub port_editor: &'a String,
+  pub serving: &'a String,
   pub projects: &'a [String],
-  pub editor: &'a String,
   pub error: bool,
   pub error_msg: &'a String,
 }

@@ -6,7 +6,7 @@ services:
       - PUID=1000
       - PGID=1000
     volumes:
-      - $HOME/Repositories/meta-mkdocs/projects:/srv
+      - ${PROJECTS}:/srv
       - ./settings.json:/config/settings.json
       - ./filebrowser.db:/database/filebrowser.db
     ports:
@@ -19,8 +19,9 @@ services:
       - PUID=1000
       - PGID=1000
     volumes:
-      - $HOME/Repositories/meta-mkdocs/projects:/app/projects
+      - ${PROJECTS}:/app/projects
     ports:
       - ${PORT_MAIN}:${PORT_MAIN}
-    command: /app/projects "0.0.0.0:${PORT_MAIN}" "127.0.0.1:${PORT_EDITOR}"
+      - ${PORT_SERVE}:${PORT_SERVE}
+    command: /app/projects "${DOMAIN}" "${PORT_MAIN}" "${PORT_EDITOR}" "${PORT_SERVE}"
     restart: unless-stopped

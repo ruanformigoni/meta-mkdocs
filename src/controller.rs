@@ -1,4 +1,10 @@
 // Imports
+use std::
+{
+  sync::{LazyLock,Mutex},
+  process::Child,
+};
+use serde::Deserialize;
 use chrono::offset::Local;
 use askama::Template;
 use axum::{
@@ -6,8 +12,61 @@ use axum::{
   response::Html,
 };
 
+#[derive(Deserialize)]
+pub struct CreateProjectRequest
+{
+  pub name: String,
+}
+
+static CHILD: LazyLock<Mutex<Option<(String,Child)>>> = LazyLock::new(|| Mutex::new(None));
+
+// fn: query_serve() {{{
+pub fn query_serve() -> String
+{
+  if let Some((name,_)) = CHILD.lock().unwrap().as_ref()
+  {
+    return name.clone();
+  }
+  return String::new();
+} // fn: serve() }}}
+
+// fn: serve() {{{
+pub async fn serve(Form(payload): Form<CreateProjectRequest>) -> Html<String>
+{
+  // Get target project directory
+  let project_dir = crate::DIR_PROJECTS.lock().unwrap().clone().join(&payload.name);
+  // Kill existing process
+  if let Some((_,child)) = CHILD.lock().unwrap().as_mut() && let Err(e) = child.kill()
+  {
+    eprintln!("{}", e);
+  } // if
+  // Serve project on the project's directory
+  if let Err(e) = std::env::set_current_dir(project_dir.to_string_lossy().to_string())
+  {
+    eprintln!("{}", e);
+  } // if
+  let url_serve = format!("0.0.0.0:{}", crate::PORT_SERVE.lock().unwrap().to_string_lossy());
+  let result = std::process::Command::new("mkdocs")
+    .args(["serve", "-a", &url_serve])
+    .spawn();
+  // Redraw html
+  if result.is_ok()
+  {
+    *CHILD.lock().unwrap() = Some((payload.name,result.ok().take().unwrap()));
+    html().await
+  }
+  else
+  {
+    let template = crate::templates::ErrorTemplate
+    {
+      message: &format!("Failed to serve project: {}", result.unwrap_err()),
+    };
+    Html(template.render().unwrap())
+  }
+} // fn: serve() }}}
+
 // fn: create() {{{
-pub async fn create(Form(payload): Form<crate::request::CreateProjectRequest>) -> Html<String>
+pub async fn create(Form(payload): Form<CreateProjectRequest>) -> Html<String>
 {
   // Get target project directory
   let project_dir = crate::DIR_PROJECTS.lock().unwrap().clone().join(&payload.name);
@@ -16,8 +75,11 @@ pub async fn create(Form(payload): Form<crate::request::CreateProjectRequest>) -
   {
     let template = crate::templates::IndexTemplate
     {
+      domain: &crate::DOMAIN.lock().unwrap().clone().to_string(),
+      port_serve: &crate::PORT_SERVE.lock().unwrap().to_string_lossy().to_string(),
+      port_editor: &crate::PORT_EDITOR.lock().unwrap().to_string_lossy().to_string(),
+      serving: &query_serve(),
       projects: &crate::projects::list(),
-      editor: &crate::URL_EDITOR.lock().unwrap().to_string_lossy().to_string(),
       error: true,
       error_msg: &String::from("Project exists"),
     };
@@ -30,7 +92,7 @@ pub async fn create(Form(payload): Form<crate::request::CreateProjectRequest>) -
   // Redraw html
   if result.is_ok()
   {
-    crate::request::html().await
+    html().await
   }
   else
   {
@@ -43,7 +105,7 @@ pub async fn create(Form(payload): Form<crate::request::CreateProjectRequest>) -
 } // fn: create() }}}
 
 // fn: delete() {{{
-pub async fn delete(Form(payload): Form<crate::request::CreateProjectRequest>) -> Html<String>
+pub async fn delete(Form(payload): Form<CreateProjectRequest>) -> Html<String>
 {
   // Get target project directory
   let dir_root = crate::DIR_PROJECTS.lock().unwrap().clone();
@@ -54,8 +116,11 @@ pub async fn delete(Form(payload): Form<crate::request::CreateProjectRequest>) -
   {
     let template = crate::templates::IndexTemplate
     {
+      domain: &crate::DOMAIN.lock().unwrap().clone().to_string(),
+      port_serve: &crate::PORT_SERVE.lock().unwrap().to_string_lossy().to_string(),
+      port_editor: &crate::PORT_EDITOR.lock().unwrap().to_string_lossy().to_string(),
+      serving: &query_serve(),
       projects: &crate::projects::list(),
-      editor: &crate::URL_EDITOR.lock().unwrap().to_string_lossy().to_string(),
       error: true,
       error_msg: &String::from("Project does not exist"),
     };
@@ -69,7 +134,7 @@ pub async fn delete(Form(payload): Form<crate::request::CreateProjectRequest>) -
   // Redraw html
   if result.is_ok()
   {
-    crate::request::html().await
+    html().await
   }
   else
   {
@@ -84,13 +149,18 @@ pub async fn delete(Form(payload): Form<crate::request::CreateProjectRequest>) -
 // fn: html() {{{
 pub async fn html() -> Html<String>
 {
-  crate::request::html().await
+  let projects: Vec<String> = crate::projects::list();
+  let template = crate::templates::IndexTemplate
+  {
+    domain: &crate::DOMAIN.lock().unwrap().clone().to_string(),
+    port_serve: &crate::PORT_SERVE.lock().unwrap().to_string_lossy().to_string(),
+    port_editor: &crate::PORT_EDITOR.lock().unwrap().to_string_lossy().to_string(),
+    serving: &crate::controller::query_serve(),
+    projects: &projects,
+    error: false,
+    error_msg: &String::new(),
+  };
+  Html(template.render().unwrap())
 } // fn: html() }}}
-
-// fn: list() {{{
-pub async fn list() -> axum::Json<serde_json::Value>
-{
-  crate::request::list().await
-} // fn: list() }}}
 
 // vim: set expandtab fdm=marker ts=2 sw=2 tw=100 et :
