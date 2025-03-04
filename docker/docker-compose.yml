@@ -1,23 +1,19 @@
 services:
   meta_mkdocs_editor:
-    image: filebrowser/filebrowser:s6
+    image: theia-ide
     container_name: meta_mkdocs_editor
-    environment:
-      - PUID=1000
-      - PGID=1000
-    volumes:
-      - ${PROJECTS}:/srv
-      - ./settings.json:/config/settings.json
-      - ./filebrowser.db:/database/filebrowser.db
+    user: "1000:1000"
     ports:
-      - ${PORT_EDITOR}:80
-    restart: unless-stopped
+      - ${PORT_EDITOR}:3000
+    volumes:
+      - ${PROJECTS}:/app/projects
+
   meta_mkdocs:
     image: ghcr.io/ruanformigoni/meta-mkdocs:latest
     container_name: meta_mkdocs
     environment:
       - PUID=1000
-      - PGID=1000
+      - P{GID=1000
     volumes:
       - ${PROJECTS}:/app/projects
     ports:

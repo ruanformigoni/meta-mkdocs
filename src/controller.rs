@@ -31,7 +31,7 @@ pub fn query_serve() -> String
 } // fn: serve() }}}
 
 // fn: serve() {{{
-pub async fn serve(Form(payload): Form<CreateProjectRequest>) -> Html<String>
+pub async fn serve(Form(payload): Form<CreateProjectRequest>) -> axum::response::Redirect
 {
   // Get target project directory
   let project_dir = crate::DIR_PROJECTS.lock().unwrap().clone().join(&payload.name);
@@ -53,97 +53,44 @@ pub async fn serve(Form(payload): Form<CreateProjectRequest>) -> Html<String>
   if result.is_ok()
   {
     *CHILD.lock().unwrap() = Some((payload.name,result.ok().take().unwrap()));
-    html().await
   }
-  else
-  {
-    let template = crate::templates::ErrorTemplate
-    {
-      message: &format!("Failed to serve project: {}", result.unwrap_err()),
-    };
-    Html(template.render().unwrap())
-  }
+  axum::response::Redirect::to("/")
 } // fn: serve() }}}
 
 // fn: create() {{{
-pub async fn create(Form(payload): Form<CreateProjectRequest>) -> Html<String>
+pub async fn create(Form(payload): Form<CreateProjectRequest>) -> axum::response::Redirect
 {
   // Get target project directory
   let project_dir = crate::DIR_PROJECTS.lock().unwrap().clone().join(&payload.name);
-  // Check if it exists
-  if project_dir.exists()
-  {
-    let template = crate::templates::IndexTemplate
-    {
-      domain: &crate::DOMAIN.lock().unwrap().clone().to_string(),
-      port_serve: &crate::PORT_SERVE.lock().unwrap().to_string_lossy().to_string(),
-      port_editor: &crate::PORT_EDITOR.lock().unwrap().to_string_lossy().to_string(),
-      serving: &query_serve(),
-      projects: &crate::projects::list(),
-      error: true,
-      error_msg: &String::from("Project exists"),
-    };
-    return Html(template.render().unwrap());
-  }
   // Create project
-  let result = std::process::Command::new("mkdocs")
+  if let Err(e) = std::process::Command::new("mkdocs")
     .args(["new", &project_dir.to_string_lossy()])
-    .output();
-  // Redraw html
-  if result.is_ok()
+    .output()
   {
-    html().await
+    eprintln!("Failure to create project: {}", e);
   }
-  else
-  {
-    let template = crate::templates::ErrorTemplate
-    {
-      message: &format!("Failed to create project: {}", result.unwrap_err()),
-    };
-    Html(template.render().unwrap())
-  }
+  // Back to root
+  axum::response::Redirect::to("/")
 } // fn: create() }}}
 
 // fn: delete() {{{
-pub async fn delete(Form(payload): Form<CreateProjectRequest>) -> Html<String>
+pub async fn delete(Form(payload): Form<CreateProjectRequest>) -> axum::response::Redirect
 {
   // Get target project directory
   let dir_root = crate::DIR_PROJECTS.lock().unwrap().clone();
   let name_project = payload.name;
   let dir_project = dir_root.clone().join(&name_project);
-  // Check if it exists
-  if ! dir_project.exists() || dir_root == dir_project
-  {
-    let template = crate::templates::IndexTemplate
-    {
-      domain: &crate::DOMAIN.lock().unwrap().clone().to_string(),
-      port_serve: &crate::PORT_SERVE.lock().unwrap().to_string_lossy().to_string(),
-      port_editor: &crate::PORT_EDITOR.lock().unwrap().to_string_lossy().to_string(),
-      serving: &query_serve(),
-      projects: &crate::projects::list(),
-      error: true,
-      error_msg: &String::from("Project does not exist"),
-    };
-    return Html(template.render().unwrap());
-  }
   // Erase project
   let mut target = String::from(".deleted.");
   target.push_str(&Local::now().format("%Y-%m-%d@%H:%M").to_string());
   target.push_str(&name_project);
-  let result = std::fs::rename(dir_project, dir_root.join(target));
-  // Redraw html
-  if result.is_ok()
+  // Move folder to target name
+  if let Err(e) = std::fs::rename(dir_project, dir_root.join(target))
   {
-    html().await
+    eprintln!("Failure to delete project: {}", e);
   }
-  else
-  {
-    let template = crate::templates::ErrorTemplate
-    {
-      message: &format!("Failed to delete project: {}", result.unwrap_err()),
-    };
-    Html(template.render().unwrap())
-  }
+  // Back to root
+  axum::response::Redirect::to("/")
 } // fn: delete() }}}
 
 // fn: html() {{{
